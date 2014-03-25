@@ -13,5 +13,7 @@
 
 # include <unistd.h>
 # include <stdlib.h>
+# include <stdio.h>
+# include <string.h>
 
 #endif /* !VIDEO_LIMA_H_ */
