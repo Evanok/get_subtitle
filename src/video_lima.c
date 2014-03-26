@@ -32,7 +32,7 @@ WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-static int curl_login_os (void)
+static char* curl_login_os (void)
 {
   CURL *curl;
   CURLcode res;
@@ -41,11 +41,13 @@ static int curl_login_os (void)
   static const char buf[] = "Content-Type: application/xml";
   const char* postmess =
     "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>LogIn</methodName>\n <params>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string>OS Test User Agent</string></value>\n  </param>\n </params>\n</methodCall>";
-
   struct MemoryStruct chunk;
-  chunk.memory=NULL; /* we expect realloc(NULL, size) to work */
-  chunk.size = 0;    /* no data at this point */
-  log_debug ("%s\n", postmess);
+  char* begin_ptr = NULL;
+  char* end_ptr = NULL;
+  char* token = NULL;
+
+  chunk.memory = NULL; /* we expect realloc(NULL, size) to work */
+  chunk.size = 0;      /* no data at this point */
 
   curl_global_init(CURL_GLOBAL_ALL);
 
@@ -64,67 +66,81 @@ static int curl_login_os (void)
 
     res = curl_easy_perform(curl);
 
-    if (chunk.memory)
-      free(chunk.memory);
-
     if(res != CURLE_OK)
     {
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-      return 1;
+      if (chunk.memory)
+	free(chunk.memory);
     }
+    else
+    {
+
+      begin_ptr = strstr (chunk.memory, "token");
+
+      if (begin_ptr == NULL)
+      {
+	fprintf(stderr, "Unable to find xml token\n");
+	fprintf(stderr, "\n%s\n", chunk.memory);
+      }
+
+      begin_ptr = strstr (chunk.memory, "<string>");
+      end_ptr = strstr (chunk.memory, "</string>");
+      if (begin_ptr && end_ptr)
+      {
+	token = malloc (sizeof(char) * (end_ptr - begin_ptr - 8 + 1));
+	strncpy (token, begin_ptr + 8, end_ptr - begin_ptr - 8);
+	token[end_ptr - begin_ptr - 8] = 0;
+	printf ("TOKEN %s\n", token);
+      }
+    }
+
+    if (chunk.memory)
+      free(chunk.memory);
 
     curl_easy_cleanup(curl);
     curl_slist_free_all (headerlist);
   }
-  return 0;
-}
 
-void clean_video (st_video_file file)
-{
-  if (file.complete_name)
-    free (file.complete_name);
+  return token;
 }
 
 int main (int argc , char **argv)
 {
-  char path[255];
+  FILE* file;
   struct stat st_stat;
-  st_video_file st_video;
+  unsigned long long	hash;
+  char* token = NULL;
 
   if (argc != 2)
     usage (argv[0]);
 
-  strcpy (path, argv[1]);
-
-  if (stat(path, &st_stat) != 0 || (S_ISDIR(st_stat.st_mode)))
+  if (stat(argv[1], &st_stat) != 0 || (S_ISDIR(st_stat.st_mode)))
   {
     perror ("stat");
-    fprintf(stderr, "path is : %s\n", path);
+    fprintf(stderr, "path is : %s\n", argv[1]);
     return 2;
   }
 
-  st_video.complete_name = malloc (strlen(path) + 1 * sizeof(char));
-  strcpy (st_video.complete_name, path);
-  strcpy (st_video.name, basename (path));
+  file = fopen(argv[1], "rb");
 
-  st_video.file = fopen(st_video.complete_name, "rb");
-
-  if (!st_video.file)
+  if (!file)
   {
     perror ("fopen");
-    fprintf(stderr, "file path is : %s\n", st_video.complete_name);
-    clean_video (st_video);
+    fprintf(stderr, "file path is : %s\n", argv[1]);
     return 2;
   }
 
-  st_video.hash = compute_hash(st_video.file);
-  printf("%llu\n", st_video.hash);
+  hash = compute_hash(file);
+  printf("%llu\n", hash);
 
-  if (curl_login_os () != 0)
+  token = curl_login_os ();
+  if (token == NULL)
     return 2;
 
-  clean_video (st_video);
-  fclose(st_video.file);
+  printf ("TOKEN %s\n", token);
+
+  fclose(file);
+  free (token);
 
   return 0;
 }
