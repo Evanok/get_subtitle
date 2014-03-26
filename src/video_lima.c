@@ -8,6 +8,77 @@ static void usage(const char* name)
   exit(1);
 }
 
+static void *myrealloc(void *ptr, size_t size)
+{
+  if(ptr)
+    return realloc(ptr, size);
+  else
+    return malloc(size);
+}
+
+static size_t
+WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+  size_t realsize = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)data;
+
+  mem->memory = (char *)myrealloc(mem->memory, mem->size + realsize + 1);
+  if (mem->memory)
+  {
+    memcpy(&(mem->memory[mem->size]), ptr, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+  }
+  return realsize;
+}
+
+static int curl_login_os (void)
+{
+  CURL *curl;
+  CURLcode res;
+
+  struct curl_slist *headerlist=NULL;
+  static const char buf[] = "Content-Type: application/xml";
+  const char* postmess =
+    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>LogIn</methodName>\n <params>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string></string></value>\n  </param>\n  <param>\n   <value><string>OS Test User Agent</string></value>\n  </param>\n </params>\n</methodCall>";
+
+  struct MemoryStruct chunk;
+  chunk.memory=NULL; /* we expect realloc(NULL, size) to work */
+  chunk.size = 0;    /* no data at this point */
+  log_debug ("%s\n", postmess);
+
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  curl = curl_easy_init();
+
+  if(curl)
+  {
+    headerlist = curl_slist_append(headerlist, buf);
+    curl_easy_setopt(curl, CURLOPT_URL, OS_URL);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
+
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postmess);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(postmess));
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+    res = curl_easy_perform(curl);
+
+    if (chunk.memory)
+      free(chunk.memory);
+
+    if(res != CURLE_OK)
+    {
+      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      return 1;
+    }
+
+    curl_easy_cleanup(curl);
+    curl_slist_free_all (headerlist);
+  }
+  return 0;
+}
+
 void clean_video (st_video_file file)
 {
   if (file.complete_name)
@@ -48,6 +119,9 @@ int main (int argc , char **argv)
 
   st_video.hash = compute_hash(st_video.file);
   printf("%llu\n", st_video.hash);
+
+  if (curl_login_os () != 0)
+    return 2;
 
   clean_video (st_video);
   fclose(st_video.file);
