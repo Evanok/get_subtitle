@@ -82,7 +82,7 @@ char* curl_perform_os (const char* postmess)
 
       if (begin_ptr == NULL)
       {
-	begin_ptr = strstr (chunk.memory, "title");
+	begin_ptr = strstr (chunk.memory, "head");
 
 	if (begin_ptr == NULL)
 	{
@@ -141,23 +141,19 @@ char* curl_perform_os (const char* postmess)
 
 int logout_os (char* token)
 {
-  char* postmess =
-    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>LogOut</methodName>\n <params>\n  <param>\n   <value><string>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</string></value>\n  </param>\n </params>\n</methodCall>";
+  char* begin_postmess =
+    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>LogOut</methodName>\n <params>\n  <param>\n   <value><string>";
 
-  char* result;
-  char* tmp_ptr = NULL;
+  char* end_postmess =
+    "</string></value>\n  </param>\n </params>\n</methodCall>";
 
-  char* finalmess = malloc (sizeof(char) * (strlen(postmess) + 1));
-  strncpy (finalmess, postmess, strlen(postmess));
-  finalmess[strlen(postmess)] = 0;
+  char* result = NULL;
+  size_t len_mess = strlen(end_postmess) + strlen(begin_postmess) + strlen(token) + 1;
 
-  tmp_ptr = strstr (finalmess, "X");
+  char* finalmess = malloc (sizeof(char) * len_mess + 1);
+  sprintf (finalmess, "%s%s%s", begin_postmess, token, end_postmess);
+  finalmess[len_mess] = 0;
 
-  if (tmp_ptr)
-  {
-    memset (tmp_ptr, ' ', 32);
-    strncpy (tmp_ptr, token, strlen(token));
-  }
   result = curl_perform_os (finalmess);
   free (finalmess);
 
@@ -214,38 +210,30 @@ char* login_os (void)
 char* check_hash_os (char* token, unsigned long long hash)
 {
   char str_hash[32];
-/*
-  char* postmess =
-  "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>CheckMovieHash</methodName>\n <params>\n  <param>\n   <value><string>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</string></value>\n  </param>\n <param>\n   <value><array><data><value><string>ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ</string></value></data></array></value>\n  </param>\n </params>\n</methodCall>";
-*/
-  char* postmess =
-    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>CheckMovieHash</methodName>\n <params>\n  <param>\n   <value><string>XXXXXXXXXXXXXXXXXXXXXXXXXX</string></value>\n  </param>\n <param>\n   <value><array><data><value><string>ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ</string></value></data></array></value>\n  </param>\n </params>\n</methodCall>";
 
-  char* result;
-  char* tmp_ptr = NULL;
+  char* part1 =
+    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>CheckMovieHash</methodName>\n <params>\n  <param>\n   <value><string>";
+  char* part2 =
+    "</string></value>\n  </param>\n <param>\n   <value><array><data><value><string>";
+  char* part3 =
+    "</string></value></data></array></value>\n  </param>\n </params>\n</methodCall>";
 
-  char* finalmess = malloc (sizeof(char) * (strlen(postmess) + 1));
-  strncpy (finalmess, postmess, strlen(postmess));
-  finalmess[strlen(postmess)] = 0;
+  char* result = NULL;
+  char* finalmess = NULL;
 
-  tmp_ptr = strstr (finalmess, "X");
+  size_t len;
 
-  if (tmp_ptr)
-  {
-    //memset (tmp_ptr, '\n', 32);
-    strncpy (tmp_ptr, token, strlen(token));
-  }
+  /* MUST ADD SANITY CHECK ! */
+  //sprintf (str_hash, "%llu", hash);
+  /* HARDCODE FOR TEST */
+  hash = hash;
+  sprintf (str_hash, "%s", "d7aa0275cace4410");
+  /* END HARDCODE FOR TEST */
+  len = strlen(part1) + strlen(part2) + strlen(part3) + strlen(str_hash) + strlen(token) + 1;
 
-  tmp_ptr = strstr (finalmess, "Z");
-
-  if (tmp_ptr)
-  {
-    memset (tmp_ptr, ' ', 32);
-    sprintf (str_hash, "%llu", hash);
-    //strncpy (tmp_ptr, str_hash, strlen(str_hash));
-    strncpy (tmp_ptr, "dab462412773581c", strlen("dab462412773581c"));
-  }
-
+  finalmess = malloc (sizeof(char) * (len + 1));
+  sprintf (finalmess, "%s%s%s%s%s", part1, token, part2, str_hash, part3);
+  finalmess[len] = 0;
 
   result = curl_perform_os (finalmess);
   free (finalmess);
