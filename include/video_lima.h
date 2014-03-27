@@ -24,6 +24,11 @@
 
 # include "os_hash.h"
 
+char* curl_perform_os (const char* postmess);
+int logout_os (char* token);
+char* login_os (void);
+char* check_hash_os (char* token, unsigned long long hash);
+
 struct MemoryStruct
 {
   char *memory;

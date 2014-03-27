@@ -23,5 +23,8 @@ mrproper: clean
 test_login:
 	curl -H "Content-Type: application/xml" -X POST --data-binary  @test/test_login.xml http://api.opensubtitles.org:80/xml-rpc
 
+test: video_lima ./test/breakdance.avi
+	./video_lima ./test/breakdance.avi
+
 valgrind: video_lima ./test/breakdance.avi
 	valgrind --leak-check=full ./video_lima ./test/breakdance.avi
