@@ -63,7 +63,7 @@ char* curl_perform_os (const char* postmess)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
 
-    printf ("\n\n[DEBUG] request : \n%s\n\n", postmess);
+    DEBUG_PRINT ("\n\n[DEBUG] request : \n%s\n\n", postmess);
 
     res = curl_easy_perform(curl);
 
@@ -76,7 +76,7 @@ char* curl_perform_os (const char* postmess)
 
     if (chunk.memory)
     {
-      printf ("\n\n[DEBUG] answer : \n%s\n\n", chunk.memory);
+      DEBUG_PRINT ("\n\n[DEBUG] answer : \n%s\n\n", chunk.memory);
 
       begin_ptr = strstr (chunk.memory, "status");
 
@@ -119,7 +119,7 @@ char* curl_perform_os (const char* postmess)
 	status = malloc (sizeof(char) * (end_ptr - begin_ptr - 8 + 1));
 	strncpy (status, begin_ptr + 8, end_ptr - begin_ptr - 8);
 	status[end_ptr - begin_ptr - 8] = 0;
-	printf ("[DEBUG] STATUS '%s'\n", status);
+	DEBUG_PRINT ("[DEBUG] STATUS '%s'\n", status);
 
 	if (strcmp (status, "200 OK") != 0)
 	{
@@ -136,6 +136,97 @@ char* curl_perform_os (const char* postmess)
   }
 
   return chunk.memory;
+}
+
+char* process_data (char* data)
+{
+  FILE* file = NULL;
+  char* begin_ptr = NULL;
+  char* end_ptr = NULL;
+  char* imdb = NULL;
+  char value[256];
+  int find = 0;
+
+  file = fopen (RESULT_OS, "w+");
+  if (file == NULL)
+  {
+    perror ("fopen");
+    fprintf(stderr, "Path is %s\n", RESULT_OS);
+    free (data);
+    return NULL;
+  }
+
+  begin_ptr = strstr (data, "MovieHash");
+
+  if (begin_ptr == NULL)
+  {
+    fclose (file);
+    free (data);
+    return NULL;
+  }
+
+  end_ptr = strstr (begin_ptr, "</string>");
+  begin_ptr = strstr (begin_ptr, "<string>");
+
+  if (begin_ptr && end_ptr)
+  {
+    strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+    value[end_ptr - begin_ptr - 8] = 0;
+    DEBUG_PRINT ("[DEBUG] MovieHash %s\n", value);
+
+    fwrite ("MovieHash : ", 12, 1, file);
+    fwrite (value, strlen(value), 1, file);
+    fwrite ("\n", 1, 1, file);
+  }
+
+  while (value[0])
+  {
+    memset (value, 0, 256);
+    begin_ptr = strstr (end_ptr, "<name>");
+    end_ptr = strstr (begin_ptr, "</name>");
+
+    if (begin_ptr && end_ptr)
+    {
+      strncpy (value, begin_ptr + 6, end_ptr - begin_ptr - 6);
+      value[end_ptr - begin_ptr - 6] = 0;
+      DEBUG_PRINT ("[DEBUG] Name %s\n", value);
+
+      if (strcmp(value, "not_processed") == 0)
+	break;
+
+      if (strcmp(value, "MovieImdbID") == 0)
+	find = 1;
+
+      fwrite (value, strlen(value), 1, file);
+      fwrite (" : ", 3, 1, file);
+
+      memset (value, 0, 256);
+      begin_ptr = strstr (end_ptr, "<string>");
+      if (begin_ptr)
+	end_ptr = strstr (begin_ptr, "</string>");
+
+      if (begin_ptr && end_ptr)
+      {
+	strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+	value[end_ptr - begin_ptr - 8] = 0;
+	DEBUG_PRINT ("[DEBUG] String %s\n", value);
+
+	if (find)
+	{
+	  imdb = malloc (sizeof(char) * (strlen(value) + 1));
+	  strcpy (imdb, value);
+	  find = 0;
+	}
+
+	fwrite (value, strlen(value), 1, file);
+	fwrite ("\n", 1, 1, file);
+      }
+    }
+  }
+
+  fclose (file);
+  free (data);
+  return imdb;
 }
 
 
@@ -159,7 +250,7 @@ int logout_os (char* token)
 
   if (result)
   {
-    printf ("LOGOUT SUCESS\n");
+    DEBUG_PRINT ("[DEBUG] LOGOUT SUCCESS\n");
     free (result);
     return 0;
   }
@@ -197,7 +288,7 @@ char* login_os (void)
       token = malloc (sizeof(char) * (end_ptr - begin_ptr - 8 + 1));
       strncpy (token, begin_ptr + 8, end_ptr - begin_ptr - 8);
       token[end_ptr - begin_ptr - 8] = 0;
-      printf ("[DEBUG] TOKEN %s\n", token);
+      DEBUG_PRINT ("[DEBUG] TOKEN %s\n", token);
     }
   }
 
@@ -220,6 +311,7 @@ char* check_hash_os (char* token, unsigned long long hash)
 
   char* result = NULL;
   char* finalmess = NULL;
+  char* tmp_ptr = NULL;
 
   size_t len;
 
@@ -240,9 +332,19 @@ char* check_hash_os (char* token, unsigned long long hash)
 
   if (result)
   {
-    printf ("MOVIE FOUND !\n");
+    tmp_ptr = strstr (result, "MovieImdbID");
+
+    if (tmp_ptr)
+    {
+      DEBUG_PRINT ("[DEBUG] MOVIE FOUND !\n");
+      return process_data (result);
+    }
+    else
+    {
+      fprintf(stderr, "Movie does not exist in OpenSubtitile DataBase \n");
+    }
     free (result);
-    return 0;
+    return NULL;
   }
 
   /* error */
@@ -286,7 +388,7 @@ int main (int argc , char **argv)
 
   hash = compute_hash(file);
   fclose(file);
-  printf("[DEBUG] hash : '%llu'\n", hash);
+  DEBUG_PRINT("[DEBUG] hash : '%llu'\n", hash);
 
   token = login_os ();
   if (token == NULL)
@@ -296,7 +398,7 @@ int main (int argc , char **argv)
 
   if (imdb)
   {
-    printf("[DEBUG] imdb : '%s'\n", imdb);
+    DEBUG_PRINT("[DEBUG] imdb : '%s'\n", imdb);
     free (imdb);
   }
 

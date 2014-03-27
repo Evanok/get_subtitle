@@ -1,6 +1,6 @@
 - replace const char use for setopt by xml file to have a better way
 to maintain the software is os api evolve
-- add macro debug stuff
+- add macro debug stuff OK
 - need to check if I can remove some cleaning stuff about curl. Instead
 of cleaning everything between each curl request, perhaps we can reuse
 work from first request.

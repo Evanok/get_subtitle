@@ -21,6 +21,7 @@
 # include <curl/curl.h>
 
 #define OS_URL "http://api.opensubtitles.org:80/xml-rpc"
+#define RESULT_OS "output"
 
 # include "os_hash.h"
 
@@ -28,12 +29,16 @@ char* curl_perform_os (const char* postmess);
 int logout_os (char* token);
 char* login_os (void);
 char* check_hash_os (char* token, unsigned long long hash);
+char* process_data (char* data);
 
 struct MemoryStruct
 {
   char *memory;
   size_t size;
 };
+#define DEBUG 1
+#define DEBUG_PRINT(...) \
+            do { if (DEBUG) fprintf(stderr, __VA_ARGS__); } while (0)
 
 #endif /* !VIDEO_LIMA_H_ */
 
