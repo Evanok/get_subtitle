@@ -58,6 +58,7 @@ char* curl_perform_os (const char* postmess)
     curl_easy_setopt(curl, CURLOPT_URL, OS_URL);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
 
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postmess);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(postmess));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
@@ -316,11 +317,7 @@ char* check_hash_os (char* token, unsigned long long hash)
   size_t len;
 
   /* MUST ADD SANITY CHECK ! */
-  //sprintf (str_hash, "%llu", hash);
-  /* HARDCODE FOR TEST */
-  hash = hash;
-  sprintf (str_hash, "%s", "d7aa0275cace4410");
-  /* END HARDCODE FOR TEST */
+  sprintf (str_hash, "%llx", hash);
   len = strlen(part1) + strlen(part2) + strlen(part3) + strlen(str_hash) + strlen(token) + 1;
 
   finalmess = malloc (sizeof(char) * (len + 1));
@@ -387,8 +384,8 @@ int main (int argc , char **argv)
   }
 
   hash = compute_hash(file);
+  DEBUG_PRINT("[DEBUG] hash : '%llx'\n", hash);
   fclose(file);
-  DEBUG_PRINT("[DEBUG] hash : '%llu'\n", hash);
 
   token = login_os ();
   if (token == NULL)
