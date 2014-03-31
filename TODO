@@ -10,3 +10,4 @@ work from first request.
 - Add check on size file. os api accept min and max file zile
 - Decrease collision of hash with size file
 - truncate parser when season = 0
+- Add documentation in header
