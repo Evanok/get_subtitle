@@ -32,6 +32,12 @@ WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
+/*******************************************************************************
+ * Function : curl_perform_os
+ * Description : send message to os server.
+ * Input : message
+ * Returns : answer in a buffer or NULL
+ ******************************************************************************/
 char* curl_perform_os (const char* postmess)
 {
   CURL *curl;
@@ -139,6 +145,13 @@ char* curl_perform_os (const char* postmess)
   return chunk.memory;
 }
 
+/*******************************************************************************
+ * Function : process_data
+ * Description : process data send by os server (Imdb, movie name, type, etc..)
+ * and display result in output file
+ * Input : buffer from server
+ * Returns : imdb or NULL
+ ******************************************************************************/
 char* process_data (char* data)
 {
   FILE* file = NULL;
@@ -230,7 +243,12 @@ char* process_data (char* data)
   return imdb;
 }
 
-
+/*******************************************************************************
+ * Function : logout_os
+ * Description : logout to os server
+ * Input : token id
+ * Returns : 0 if sucess else 1
+ ******************************************************************************/
 int logout_os (char* token)
 {
   char* begin_postmess =
@@ -260,6 +278,12 @@ int logout_os (char* token)
   return 1;
 }
 
+/*******************************************************************************
+ * Function : login_os
+ * Description : login on os server
+ * Input : None
+ * Returns : token from server or NULL
+ ******************************************************************************/
 char* login_os (void)
 {
   const char* postmess =
@@ -299,6 +323,12 @@ char* login_os (void)
   return token;
 }
 
+/*******************************************************************************
+ * Function : check_hash_os
+ * Description : send hash to os server to get imdb
+ * Input : token and hash
+ * Returns : imdb or NULL
+ ******************************************************************************/
 char* check_hash_os (char* token, unsigned long long hash)
 {
   char str_hash[32];
