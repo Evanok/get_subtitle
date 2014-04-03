@@ -78,7 +78,7 @@ char* curl_perform_os (const char* postmess)
     curl_easy_setopt(curl, CURLOPT_URL, OS_URL);
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
 
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, TIMEOUT_SECONDS);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postmess);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(postmess));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
