@@ -148,20 +148,19 @@ char* get_imdb (char* data)
   char value[256];
   int find = 0;
 
+  begin_ptr = strstr (data, "MovieHash");
+
+  if (begin_ptr == NULL)
+  {
+    free (data);
+    return NULL;
+  }
+
   file = fopen (RESULT_OS, "w+");
   if (file == NULL)
   {
     perror ("fopen");
     fprintf(stderr, "Path is %s\n", RESULT_OS);
-    free (data);
-    return NULL;
-  }
-
-  begin_ptr = strstr (data, "MovieHash");
-
-  if (begin_ptr == NULL)
-  {
-    fclose (file);
     free (data);
     return NULL;
   }
@@ -348,7 +347,176 @@ char* check_hash_os (char* token, unsigned long long hash)
   return NULL;
 }
 
-char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long size)
+int get_subtitle_info (char* data)
+{
+  FILE* file = NULL;
+  char* begin_ptr = NULL;
+  char* end_ptr = NULL;
+  char value[256];
+
+  file = fopen (RESULT_OS, "a");
+  if (file == NULL)
+  {
+    perror ("fopen");
+    fprintf(stderr, "Path is %s\n", RESULT_OS);
+    free (data);
+    return 1;
+  }
+
+  begin_ptr = strstr (data, "<boolean>0</boolean>");
+
+  if (begin_ptr)
+    return 1;
+
+  begin_ptr = data;
+
+  while (1)
+  {
+    memset (value, 0, 256);
+    begin_ptr = strstr (begin_ptr, "<name>SubFileName</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] SubFileName %s\n", value);
+
+      fwrite ("SubFileName : ", 14, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>SubAddDate</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Date %s\n", value);
+
+      fwrite ("Date : ", 7, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>SubRating</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Rate %s\n", value);
+
+      fwrite ("Rate : ", 7, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>SubDownloadsCnt</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Count %s\n", value);
+
+      fwrite ("Download count : ", 17, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>LanguageName</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Language %s\n", value);
+
+      fwrite ("Language : ", 11, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>SubDownloadLink</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Download Link %s\n", value);
+
+      fwrite ("Download link : ", 16, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+
+    begin_ptr = strstr (end_ptr, "<name>SubtitlesLink</name>");
+
+    if (begin_ptr == NULL)
+      return 0;
+
+    end_ptr = strstr (begin_ptr, "</string>");
+    begin_ptr = strstr (begin_ptr, "<string>");
+
+    if (begin_ptr && end_ptr)
+    {
+      memset (value, 0, 256);
+      strncpy (value, begin_ptr + 8, end_ptr - begin_ptr - 8);
+      value[end_ptr - begin_ptr - 8] = 0;
+      DEBUG_PRINT ("[DEBUG] Subtitle Page %s\n", value);
+
+      fwrite ("Subtitle Page : ", 16, 1, file);
+      fwrite (value, strlen(value), 1, file);
+      fwrite ("\n", 1, 1, file);
+    }
+  }
+
+  return 0;
+}
+
+int get_subtitile_os (char* token, unsigned long long hash, unsigned long long size)
 {
   char str_hash[32];
   char str_size[32];
@@ -366,6 +534,7 @@ char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long
   char* finalmess = NULL;
 
   size_t len;
+  int res = 0;
 
   /* MUST ADD SANITY CHECK ! */
   sprintf (str_hash, "%llx", hash);
@@ -383,25 +552,13 @@ char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long
   if (result)
   {
     DEBUG_PRINT ("[DEBUG] SUBTILE !\n\n%s\n", result);
-    /*
-    tmp_ptr = strstr (result, "MovieImdbID");
-
-    if (tmp_ptr)
-    {
-      DEBUG_PRINT ("[DEBUG] MOVIE FOUND !\n");
-      return get_imdb (result);
-    }
-    else
-    {
-      fprintf(stderr, "Movie does not exist in OpenSubtitile DataBase \n");
-    }
-    */
+    res = get_subtitle_info(result);
     free (result);
-    return NULL;
+    return res;
   }
 
   /* error */
-  return NULL;
+  return 1;
 }
 
 int main (int argc , char **argv)

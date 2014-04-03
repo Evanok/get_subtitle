@@ -30,7 +30,8 @@ char* curl_perform_os (const char* postmess);
 int logout_os (char* token);
 char* login_os (void);
 char* check_hash_os (char* token, unsigned long long hash);
-char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long size);
+int get_subtitle_os (char* token, unsigned long long hash, unsigned long long size);
+int get_subtitle_info (char* data);
 char* get_imdb (char* data);
 
 struct MemoryStruct
