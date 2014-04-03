@@ -1,5 +1,15 @@
 #include <video_lima.h>
 
+/*******************************************************************************
+ *
+ * Function : usage
+ *
+ * Description : print usage
+ *
+ * Input : Name of process
+ * Returns : None
+ *
+ ******************************************************************************/
 static void usage(const char* name)
 {
   fprintf(stderr, "\nusage: %s [options]... file\n\n", name);
@@ -32,6 +42,16 @@ WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
+/*******************************************************************************
+ *
+ * Function : curl_perform_os
+ *
+ * Description : send request to os server
+ *
+ * Input : message to process
+ * Returns : answer from server
+ *
+ ******************************************************************************/
 char* curl_perform_os (const char* postmess)
 {
   CURL *curl;
@@ -139,6 +159,16 @@ char* curl_perform_os (const char* postmess)
   return chunk.memory;
 }
 
+/*******************************************************************************
+ *
+ * Function : get_imdb
+ *
+ * Description : get imdb and write info on movie in output file thanks to data from os server
+ *
+ * Input : answer from os server
+ * Returns : imdb if sucess, NULL if failed
+ *
+ ******************************************************************************/
 char* get_imdb (char* data)
 {
   FILE* file = NULL;
@@ -229,7 +259,16 @@ char* get_imdb (char* data)
   return imdb;
 }
 
-
+/*******************************************************************************
+ *
+ * Function : logout_os
+ *
+ * Description : logout from os server
+ *
+ * Input : token need to logout
+ * Returns : return 0 if success, 1 if failed
+ *
+ ******************************************************************************/
 int logout_os (char* token)
 {
   char* begin_postmess =
@@ -259,6 +298,16 @@ int logout_os (char* token)
   return 1;
 }
 
+/*******************************************************************************
+ *
+ * Function : login_os
+ *
+ * Description : login on os server
+ *
+ * Input : None
+ * Returns : token give by os server
+ *
+ ******************************************************************************/
 char* login_os (void)
 {
   const char* postmess =
@@ -298,6 +347,16 @@ char* login_os (void)
   return token;
 }
 
+/*******************************************************************************
+ *
+ * Function : check_hash_os
+ *
+ * Description : Check thanks to the hash and token that the movie exist in database to get info
+ *
+ * Input : token and hash
+ * Returns : imdb if success, NULL if failed
+ *
+ ******************************************************************************/
 char* check_hash_os (char* token, unsigned long long hash)
 {
   char str_hash[32];
@@ -347,6 +406,16 @@ char* check_hash_os (char* token, unsigned long long hash)
   return NULL;
 }
 
+/*******************************************************************************
+ *
+ * Function : get_subtitle_info
+ *
+ * Description : Parse data from server to gget subtitle info
+ *
+ * Input : Data from server
+ * Returns : 0 if success, 1 if failed
+ *
+ ******************************************************************************/
 int get_subtitle_info (char* data)
 {
   FILE* file = NULL;
@@ -516,7 +585,17 @@ int get_subtitle_info (char* data)
   return 0;
 }
 
-int get_subtitile_os (char* token, unsigned long long hash, unsigned long long size)
+/*******************************************************************************
+ *
+ * Function : get_subtitle_os
+ *
+ * Description : ask to os server all subtitle info on movie
+ *
+ * Input : token, hash and size of movie
+ * Returns : 0 if success, 1 if failed
+ *
+ ******************************************************************************/
+int get_subtitle_os (char* token, unsigned long long hash, unsigned long long size)
 {
   char str_hash[32];
   char str_size[32];
@@ -622,7 +701,7 @@ int main (int argc , char **argv)
     free (imdb);
   }
 
-  get_subtitile_os (token, hash, size_byte);
+  get_subtitle_os (token, hash, size_byte);
 
   if (logout_os(token))
   {

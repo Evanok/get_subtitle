@@ -23,6 +23,7 @@
 #define OS_URL "http://api.opensubtitles.org:80/xml-rpc"
 #define RESULT_OS "output"
 #define MAX_SIZE 8589934592
+#define TIMEOUT_SECONDS 5
 
 # include "os_hash.h"
 
@@ -39,7 +40,7 @@ struct MemoryStruct
   char *memory;
   size_t size;
 };
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_PRINT(...) \
             do { if (DEBUG) fprintf(stderr, __VA_ARGS__); } while (0)
 
