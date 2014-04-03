@@ -4,7 +4,7 @@ static void usage(const char* name)
 {
   fprintf(stderr, "\nusage: %s [options]... file\n\n", name);
   fprintf(stderr, "options:\n");
-  fprintf(stderr, " -d : enable verbose mode\n");
+  fprintf(stderr, " -l : Set the language code (ISO639) for subtitle (default eng)\n");
   exit(1);
 }
 
@@ -32,12 +32,6 @@ WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *data)
   return realsize;
 }
 
-/*******************************************************************************
- * Function : curl_perform_os
- * Description : send message to os server.
- * Input : message
- * Returns : answer in a buffer or NULL
- ******************************************************************************/
 char* curl_perform_os (const char* postmess)
 {
   CURL *curl;
@@ -145,14 +139,7 @@ char* curl_perform_os (const char* postmess)
   return chunk.memory;
 }
 
-/*******************************************************************************
- * Function : process_data
- * Description : process data send by os server (Imdb, movie name, type, etc..)
- * and display result in output file
- * Input : buffer from server
- * Returns : imdb or NULL
- ******************************************************************************/
-char* process_data (char* data)
+char* get_imdb (char* data)
 {
   FILE* file = NULL;
   char* begin_ptr = NULL;
@@ -243,12 +230,7 @@ char* process_data (char* data)
   return imdb;
 }
 
-/*******************************************************************************
- * Function : logout_os
- * Description : logout to os server
- * Input : token id
- * Returns : 0 if sucess else 1
- ******************************************************************************/
+
 int logout_os (char* token)
 {
   char* begin_postmess =
@@ -278,12 +260,6 @@ int logout_os (char* token)
   return 1;
 }
 
-/*******************************************************************************
- * Function : login_os
- * Description : login on os server
- * Input : None
- * Returns : token from server or NULL
- ******************************************************************************/
 char* login_os (void)
 {
   const char* postmess =
@@ -323,12 +299,6 @@ char* login_os (void)
   return token;
 }
 
-/*******************************************************************************
- * Function : check_hash_os
- * Description : send hash to os server to get imdb
- * Input : token and hash
- * Returns : imdb or NULL
- ******************************************************************************/
 char* check_hash_os (char* token, unsigned long long hash)
 {
   char str_hash[32];
@@ -364,12 +334,68 @@ char* check_hash_os (char* token, unsigned long long hash)
     if (tmp_ptr)
     {
       DEBUG_PRINT ("[DEBUG] MOVIE FOUND !\n");
-      return process_data (result);
+      return get_imdb (result);
     }
     else
     {
       fprintf(stderr, "Movie does not exist in OpenSubtitile DataBase \n");
     }
+    free (result);
+    return NULL;
+  }
+
+  /* error */
+  return NULL;
+}
+
+char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long size)
+{
+  char str_hash[32];
+  char str_size[32];
+
+  char* part1 =
+    "<?xml version=\"1.0\"?>\n<methodCall>\n <methodName>SearchSubtitles</methodName>\n <params>\n  <param>\n   <value><string>";
+  char* part2 =
+    "</string></value></param><param><value><array><data><value><struct><member> <name>sublanguageid</name> <value><string></string></value></member><member><name>moviehash</name> <value><string>";
+  char* part3 =
+    "</string></value></member>  <member>  <name>moviebytesize</name> <value><double>";
+  char* part4 =
+    "</double></value></member></struct></value></data></array></value></param></params></methodCall>";
+
+  char* result = NULL;
+  char* finalmess = NULL;
+
+  size_t len;
+
+  /* MUST ADD SANITY CHECK ! */
+  sprintf (str_hash, "%llx", hash);
+  sprintf (str_size, "%lld", size);
+
+  len = strlen(part1) + strlen(part2) + strlen(part3) + strlen(part4) + strlen(str_hash) + strlen(token) + strlen(str_size) + 1;
+
+  finalmess = malloc (sizeof(char) * (len + 1));
+  sprintf (finalmess, "%s%s%s%s%s%s%s", part1, token, part2, str_hash, part3, str_size, part4);
+  finalmess[len] = 0;
+
+  result = curl_perform_os (finalmess);
+  free (finalmess);
+
+  if (result)
+  {
+    DEBUG_PRINT ("[DEBUG] SUBTILE !\n\n%s\n", result);
+    /*
+    tmp_ptr = strstr (result, "MovieImdbID");
+
+    if (tmp_ptr)
+    {
+      DEBUG_PRINT ("[DEBUG] MOVIE FOUND !\n");
+      return get_imdb (result);
+    }
+    else
+    {
+      fprintf(stderr, "Movie does not exist in OpenSubtitile DataBase \n");
+    }
+    */
     free (result);
     return NULL;
   }
@@ -386,6 +412,7 @@ int main (int argc , char **argv)
   char* token = NULL;
   char* imdb = NULL;
   int error = 0;
+  unsigned long long size_byte = 0;
 
   if (argc != 2)
     usage (argv[0]);
@@ -401,6 +428,15 @@ int main (int argc , char **argv)
   {
     fprintf(stderr, "This is a directory !\n");
     fprintf(stderr, "path is : %s\n", argv[1]);
+    return 1;
+  }
+
+  size_byte = st_stat.st_size;
+  DEBUG_PRINT("[DEBUG] size : '%lld'\n", size_byte);
+
+  if (size_byte > MAX_SIZE)
+  {
+    fprintf(stderr, "file is too big : %lld\n", size_byte);
     return 1;
   }
 
@@ -428,6 +464,8 @@ int main (int argc , char **argv)
     DEBUG_PRINT("[DEBUG] imdb : '%s'\n", imdb);
     free (imdb);
   }
+
+  get_subtitile_os (token, hash, size_byte);
 
   if (logout_os(token))
   {

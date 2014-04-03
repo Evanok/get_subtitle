@@ -22,6 +22,7 @@
 
 #define OS_URL "http://api.opensubtitles.org:80/xml-rpc"
 #define RESULT_OS "output"
+#define MAX_SIZE 8589934592
 
 # include "os_hash.h"
 
@@ -29,14 +30,15 @@ char* curl_perform_os (const char* postmess);
 int logout_os (char* token);
 char* login_os (void);
 char* check_hash_os (char* token, unsigned long long hash);
-char* process_data (char* data);
+char* get_subtitile_os (char* token, unsigned long long hash, unsigned long long size);
+char* get_imdb (char* data);
 
 struct MemoryStruct
 {
   char *memory;
   size_t size;
 };
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_PRINT(...) \
             do { if (DEBUG) fprintf(stderr, __VA_ARGS__); } while (0)
 
