@@ -396,7 +396,7 @@ char* check_hash_os (char* token, unsigned long long hash)
     }
     else
     {
-      fprintf(stderr, "Movie does not exist in OpenSubtitile DataBase \n");
+      fprintf(stderr, "Movie does not exist in OpenSubtitle DataBase \n");
     }
     free (result);
     return NULL;
@@ -699,9 +699,13 @@ int main (int argc , char **argv)
   {
     DEBUG_PRINT("[DEBUG] imdb : '%s'\n", imdb);
     free (imdb);
-  }
 
-  get_subtitle_os (token, hash, size_byte);
+    error = get_subtitle_os (token, hash, size_byte);
+  }
+  else
+  {
+    error = 1;
+  }
 
   if (logout_os(token))
   {
