@@ -16,6 +16,7 @@ clean:
 mrproper: clean
 	rm -f video_lima
 	rm -f ./test/breakdance.avi
+	rm -f output
 
 ./test/breakdance.avi:
 	cd ./test && wget http://www.opensubtitles.org/addons/avi/breakdance.avi
