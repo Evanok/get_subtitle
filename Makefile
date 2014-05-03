@@ -32,3 +32,5 @@ valgrind: video_lima ./test/breakdance.avi
 
 dedi_test:
 	./video_lima ../download/How.I.Met.Your.Mother.S09E22.HDTV.x264-KILLERS.mp4
+
+.PHONY: test

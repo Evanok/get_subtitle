@@ -40,7 +40,8 @@ struct MemoryStruct
   char *memory;
   size_t size;
 };
-#define DEBUG 0
+/* change value here to enable/disable debug */
+#define DEBUG 1
 #define DEBUG_PRINT(...) \
             do { if (DEBUG) fprintf(stderr, __VA_ARGS__); } while (0)
 
