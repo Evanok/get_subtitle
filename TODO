@@ -6,7 +6,7 @@ to maintain the software is os api evolve
 of cleaning everything between each curl request, perhaps we can reuse
 work from first request.
 - false positive on sanity check with this use case :
-  valgrind --leak-check=full ./video_lima Makefile OK
+  valgrind --leak-check=full ./get_subtitle Makefile OK
 - Add check on size file. os api accept min and max file zile OK
 - Decrease collision of hash with size file OK
 - truncate parser when season = 0

@@ -3,9 +3,9 @@ LDFLAGS += -lcurl
 HEADERS += -I./include
 CC=c99
 
-all: video_lima
+all: get_subtitle
 
-video_lima: src/video_lima.o src/os_hash.o
+get_subtitle: src/get_subtitle.o src/os_hash.o
 	$(CC) -g -gg -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
@@ -14,7 +14,7 @@ clean:
 	find . -name "*.o" -print0 | xargs -0 rm -f
 
 mrproper: clean
-	rm -f video_lima
+	rm -f get_subtitle
 	rm -f ./test/breakdance.avi
 	rm -f output
 
@@ -24,13 +24,13 @@ mrproper: clean
 test_login:
 	curl -H "Content-Type: application/xml" -X POST --data-binary  @test/test_login.xml http://api.opensubtitles.org:80/xml-rpc
 
-test: video_lima ./test/breakdance.avi
-	./video_lima ./test/breakdance.avi
+test: get_subtitle ./test/breakdance.avi
+	./get_subtitle ./test/breakdance.avi
 
-valgrind: video_lima ./test/breakdance.avi
-	valgrind --leak-check=full ./video_lima ./test/breakdance.avi
+valgrind: get_subtitle ./test/breakdance.avi
+	valgrind --leak-check=full ./get_subtitle ./test/breakdance.avi
 
 dedi_test:
-	./video_lima ../download/How.I.Met.Your.Mother.S09E22.HDTV.x264-KILLERS.mp4
+	./get_subtitle ../download/How.I.Met.Your.Mother.S09E22.HDTV.x264-KILLERS.mp4
 
 .PHONY: test
