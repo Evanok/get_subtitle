@@ -41,7 +41,11 @@ struct MemoryStruct
   size_t size;
 };
 /* change value here to enable/disable debug */
-#define DEBUG 1
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 #define DEBUG_PRINT(...) \
             do { if (DEBUG) fprintf(stderr, __VA_ARGS__); } while (0)
 

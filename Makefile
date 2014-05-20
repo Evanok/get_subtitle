@@ -1,4 +1,12 @@
-CFLAGS += -Werror -W -Wall -pedantic
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+    CFLAGS += -g -DDEBUG
+else
+    CFLAGS += -g -DNODEBUG
+endif
+
+CFLAGS += -Werror -W -Wall -pedantic -Wformat -Wformat-security -Wextra
+CFLAGS += -Wextra -Wno-long-long -Wno-variadic-macros
 LDFLAGS += -lcurl
 HEADERS += -I./include
 CC=c99
@@ -6,10 +14,10 @@ CC=c99
 all: get_subtitle
 
 get_subtitle: src/get_subtitle.o src/os_hash.o
-	$(CC) -g -gg -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) -g -o $@ -c $< $(CFLAGS) $(HEADERS)
+	$(CC) -o $@ -c $< $(CFLAGS) $(HEADERS)
 clean:
 	find . -name "*.o" -print0 | xargs -0 rm -f
 
